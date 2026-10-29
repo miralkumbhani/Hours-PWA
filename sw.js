@@ -1,6 +1,6 @@
 /* Hours — Service Worker v3 */
 "use strict";
-const CACHE  = "hours-v3";
+const CACHE  = "hours-v4";
 const ASSETS = ["./","./index.html","./manifest.json",
                 "./icon-192.png","./icon-512.png","./icon-96.png"];
 
@@ -91,6 +91,24 @@ self.addEventListener("message", async e=>{
       break;
     case "CANCEL_NIGHTLY":
       await cancelTag("nightly");
+      break;
+    case "SCHEDULE_8PM":
+      await scheduleOne({tag:"forgot-8pm",title:d.title,body:d.body,epochMs:d.epochMs});
+      break;
+    case "CANCEL_8PM":
+      await cancelTag("forgot-8pm");
+      break;
+    case "SCHEDULE_AUTOOUT":
+      await scheduleOne({tag:"forgot-autoout",title:d.title,body:d.body,epochMs:d.epochMs});
+      break;
+    case "CANCEL_AUTOOUT":
+      await cancelTag("forgot-autoout");
+      break;
+    case "SCHEDULE_FORGOT9AM":
+      await scheduleOne({tag:"forgot-9am",title:d.title,body:d.body,epochMs:d.epochMs});
+      break;
+    case "CANCEL_FORGOT9AM":
+      await cancelTag("forgot-9am");
       break;
   }
 });

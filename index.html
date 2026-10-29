@@ -444,8 +444,8 @@ function predict(k,now){
   const effTarget=S.settings.workMin+catchup;
   const workLeft=Math.max(0,effTarget-eve-c.workMin);
   const breakLeft=Math.max(0,S.settings.breakMin-c.breakMin);
-  const leaveTs=now+(workLeft+breakLeft)*60000;
-  const done=c.firstIn!=null&&workLeft<=0&&breakLeft<=0;
+  const leaveTs=now+workLeft*60000;
+  const done=c.firstIn!=null&&workLeft<=0;
   const covered=Math.min(catchup,Math.max(0,(c.workMin+eve)-S.settings.workMin));
   return{...c,eve,catchup,covered,workLeft,breakLeft,leaveTs,done};
 }
@@ -545,6 +545,50 @@ async function scheduleNightlyNotification(){
 async function cancelNightlyNotification(){
   swPost({type:"CANCEL_NIGHTLY"});clearTimeout(window._nightlyTimer);}
 
+/* forgot-to-clock-out chain: 8PM nudge → 11:59PM auto clock-out → next-day 9AM notice */
+function isWeekday(d){const g=d.getDay();return g!==0&&g!==6;}
+function atTime(h,m,s,dayOffset){const d=new Date();d.setDate(d.getDate()+(dayOffset||0));d.setHours(h,m,s,0);return d.getTime();}
+function backfillClockOut(k){
+  const ts=new Date(k+"T23:59:59").getTime();
+  day(k).events.push({type:"out",t:ts,id:Math.random().toString(36).slice(2),auto:true});
+  day(k).autoClockedOut=true;}
+function backfillForgottenDays(){
+  const tk=todayKey();
+  const fixed=Object.keys(S.days).filter(k=>k<tk&&hasData(k)&&lastEventType(k)&&lastEventType(k)!=="out");
+  if(!fixed.length)return;
+  fixed.sort().forEach(backfillClockOut);
+  save();
+  const last=new Date(fixed.sort().pop()+"T00:00:00");
+  const label=fixed.length>1?`${fixed.length} earlier days`:last.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"});
+  fire("Forgot to clock out",`Looks like you didn't clock out on ${label} — logged it at 11:59 PM automatically.`,"⏰");}
+let _forgotTimers=[];
+function clearForgotSchedules(){
+  _forgotTimers.forEach(clearTimeout);_forgotTimers=[];
+  swPost({type:"CANCEL_8PM"});swPost({type:"CANCEL_AUTOOUT"});swPost({type:"CANCEL_FORGOT9AM"});}
+function scheduleForgotClockOutChain(k){
+  clearForgotSchedules();
+  if(!S.settings.notify||k!==todayKey())return;
+  if(!isWeekday(new Date()))return;
+  if(!day(k).events.length||lastEventType(k)==="out")return;
+  const now=Date.now();
+  const eightPM=atTime(20,0,0),elevenFiftyNine=atTime(23,59,0),nineAMtmw=atTime(9,0,0,1);
+  if(eightPM>now){
+    swPost({type:"SCHEDULE_8PM",epochMs:eightPM,
+      title:"Still clocked in?",body:"You haven't clocked out yet today."});
+    _forgotTimers.push(setTimeout(()=>{
+      if(lastEventType(k)!=="out")fire("Still clocked in?","You haven't clocked out yet today.","⏰");
+    },eightPM-now));}
+  if(elevenFiftyNine>now){
+    swPost({type:"SCHEDULE_AUTOOUT",epochMs:elevenFiftyNine,
+      title:"Clocking you out",body:"No clock-out detected — logging 11:59 PM automatically."});
+    _forgotTimers.push(setTimeout(()=>{
+      if(lastEventType(k)!=="out"){
+        backfillClockOut(k);save();render();
+        fire("Clocked you out","Didn't see a clock-out, so we logged 11:59 PM for you.","🌙");}
+    },elevenFiftyNine-now));}
+  swPost({type:"SCHEDULE_FORGOT9AM",epochMs:nineAMtmw,
+    title:"Forgot to clock out yesterday",body:"Looks like you didn't clock out yesterday — check your timeline."});}
+
 /* notification permission UI */
 function updateNotifUI(){
   const banner=document.getElementById("notifBanner");
@@ -586,12 +630,12 @@ function addEvent(type,ts,k){
   k=k||todayKey();
   day(k).events.push({type,t:ts||Date.now(),id:Math.random().toString(36).slice(2)});
   if(type==="break_start")day(k).notified={};
-  save();if(k===todayKey())scheduleBreakAlerts(k);render();}
+  save();if(k===todayKey()){scheduleBreakAlerts(k);scheduleForgotClockOutChain(k);}render();}
 function clockIn(){addEvent("in");toast("Clocked in","Your day has started.","▶");}
 function startBreak(){addEvent("break_start");toast("Break started","I'll warn you at 10 min left.","☕");}
 function endBreak(){addEvent("break_end");toast("Back to work","","▶");clearSchedules();}
 function clockOut(){addEvent("out");toast("Clocked out","Nice work today.","✓");
-  clearSchedules();scheduleNightlyNotification();}
+  clearSchedules();clearForgotSchedules();scheduleNightlyNotification();}
 
 function renderActions(){
   const k=todayKey(),lt=lastEventType(k),wrap=document.getElementById("actions");wrap.innerHTML="";
@@ -878,7 +922,7 @@ function renderDayPanel(){
   let evHtml=ev.length?ev.map(e=>`
     <div class="dp-row">
       <span class="dp-dot" style="background:${COLOR[e.type]}"></span>
-      <span class="dp-lbl">${LABEL[e.type]}</span>
+      <span class="dp-lbl">${LABEL[e.type]}${e.auto?' <span style="color:var(--ink-faint);font-weight:400">(auto)</span>':""}</span>
       <button class="dp-time" onclick="editPunch('${e.id}','${k}')">${clock(e.t)}</button>
       <button class="dp-edit" onclick="deletePunch('${e.id}','${k}')">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
@@ -966,7 +1010,8 @@ function openSettings(){
     g.openingMin=isNaN(ob)?0:Math.round(ob*60);
     g.calId=document.getElementById("scid").value.trim();
     save();render();closeSheet();
-    if(notify)scheduleNightlyNotification();else cancelNightlyNotification();};}
+    if(notify){scheduleNightlyNotification();scheduleForgotClockOutChain(todayKey());}
+    else{cancelNightlyNotification();clearForgotSchedules();}};}
 
 function exportData(){
   const rows=[["date","clock_in","clock_out","worked_min","break_min","calls_min","total_min","target_min","delta_min"]];
@@ -1008,15 +1053,21 @@ document.getElementById("addPunch").onclick=()=>addPunchManual();
 document.getElementById("ephemeralBanner").classList.toggle("hidden",!Store.ephemeral);
 
 /* ════════ BOOT ════════ */
+backfillForgottenDays();
 scheduleBreakAlerts(todayKey());
+scheduleForgotClockOutChain(todayKey());
 render();
 setInterval(()=>{if(currentView==="today")render();},1000);
 document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden){scheduleBreakAlerts(todayKey());render();}});
+  if(!document.hidden){
+    backfillForgottenDays();
+    scheduleBreakAlerts(todayKey());
+    scheduleForgotClockOutChain(todayKey());
+    render();}});
 (async()=>{
   await registerSW();
   if(S.settings.notify&&"Notification"in window&&Notification.permission==="granted"){
-    scheduleNightlyNotification();scheduleBreakAlerts(todayKey());}
+    scheduleNightlyNotification();scheduleBreakAlerts(todayKey());scheduleForgotClockOutChain(todayKey());}
   if("serviceWorker"in navigator)
     navigator.serviceWorker.addEventListener("controllerchange",()=>{
       if(S.settings.notify)scheduleNightlyNotification();});
