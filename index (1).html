@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12151C">
+<title>Hours</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%2312151C'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%2317A47E' stroke-width='7'/%3E%3Cpath d='M50 32 V50 L63 58' fill='none' stroke='%23F2F4F8' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="manifest" href="./manifest.json">
+<style>
+:root{
+  --bg:#EDEFF3;--surface:#fff;--ink:#171B24;--ink-soft:#5A6273;--ink-faint:#9AA2B1;
+  --line:#E2E6EC;--line-soft:#EEF1F5;
+  --dial:#12151C;--dial-2:#1B202B;--dial-ink:#F2F4F8;--dial-soft:#8992A6;
+  --go:#18A47E;--warn:#E8A13A;--over:#E5484D;
+  --shadow:0 1px 2px rgba(20,25,40,.04),0 8px 24px -12px rgba(20,25,40,.14);
+  --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:"Inter",system-ui,sans-serif;font-size:16px;line-height:1.45;
+  padding:max(14px,env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
+  max-width:520px;margin:0 auto;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:"Space Grotesk",sans-serif;margin:0}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:16px}
+.hidden{display:none!important}
+
+/* ── nav ── */
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px 16px}
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:34px;height:34px;border-radius:10px;background:var(--dial);display:grid;place-items:center;flex:none}
+.mark svg{width:20px;height:20px}
+.brand h1{font-size:18px;font-weight:600;letter-spacing:-.02em}
+.brand .date{font-size:12.5px;color:var(--ink-soft);font-weight:500;margin-top:-2px}
+.nav-right{display:flex;gap:8px}
+.icon-btn{width:40px;height:40px;border-radius:12px;background:var(--surface);border:1px solid var(--line);
+  display:grid;place-items:center;box-shadow:var(--shadow);position:relative}
+.icon-btn svg{width:20px;height:20px;stroke:var(--ink-soft)}
+.icon-btn.active{background:var(--dial);border-color:var(--dial)}
+.icon-btn.active svg{stroke:#fff}
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;
+  background:var(--over);border:2px solid var(--bg);display:none}
+.notif-dot.show{display:block}
+
+/* ── views ── */
+.view{display:none}.view.active{display:block}
+
+/* ── dial ── */
+.dial{background:radial-gradient(120% 140% at 50% -20%,var(--dial-2),var(--dial) 70%);
+  color:var(--dial-ink);border-radius:26px;padding:22px 20px 24px;
+  box-shadow:0 20px 40px -24px rgba(10,14,24,.8)}
+.state-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;
+  padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dial-soft);flex:none}
+.dot.live{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.leave-wrap{margin:20px 0 6px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.leave-label{font-size:12.5px;color:var(--dial-soft);font-weight:500;text-transform:uppercase;letter-spacing:.08em}
+.leave-time{font-family:"JetBrains Mono",monospace;font-size:52px;font-weight:700;line-height:.95;margin-top:6px}
+.leave-time .sm{font-size:22px;font-weight:600;color:var(--dial-soft)}
+.leave-note{font-size:13px;color:var(--dial-soft);margin-top:8px;min-height:18px}
+.gauge{width:104px;height:104px;flex:none;position:relative}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .track{stroke:rgba(255,255,255,.09)}
+.gauge .fill{transition:stroke-dashoffset .5s ease,stroke .4s ease}
+.gauge .center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.gauge .center .big{font-size:20px;font-weight:700;font-family:"JetBrains Mono",monospace}
+.gauge .center .lbl{font-size:9.5px;color:var(--dial-soft);text-transform:uppercase;letter-spacing:.07em;margin-top:1px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:20px;
+  background:rgba(255,255,255,.07);border-radius:14px;overflow:hidden}
+.stat{background:var(--dial);padding:13px 14px}
+.stat .k{font-size:11px;color:var(--dial-soft);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.stat .v{font-size:20px;font-weight:600;margin-top:3px;font-family:"JetBrains Mono",monospace}
+.stat .v small{font-size:12px;color:var(--dial-soft);font-weight:500;font-family:inherit}
+
+/* ── action buttons ── */
+.actions{display:grid;gap:10px;margin:16px 0 6px}
+.actions .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border-radius:15px;padding:16px;font-size:16px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:transform .08s ease;box-shadow:var(--shadow)}
+.btn:active{transform:scale(.975)}
+.btn svg{width:19px;height:19px}
+.btn-primary{background:var(--dial);color:#fff}
+.btn-go{background:var(--go);color:#fff}
+.btn-warn{background:#fff;color:var(--warn);border:1.5px solid var(--warn)}
+.btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn-danger{background:#fff;color:var(--over);border:1.5px solid rgba(229,72,77,.4)}
+
+/* ── cards ── */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);margin-top:14px;overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px}
+.card-h h2{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.card-h .sub{font-size:12px;color:var(--ink-soft);font-weight:500}
+.add-btn{font-size:13px;font-weight:600;color:var(--go);padding:6px 10px;
+  border-radius:9px;background:rgba(24,164,126,.09)}
+.list{padding:2px 16px 14px}
+.empty{padding:6px 16px 18px;color:var(--ink-faint);font-size:13.5px}
+.row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line-soft)}
+.row:first-child{border-top:none}
+.row .tl-dot{width:9px;height:9px;border-radius:50%;flex:none;margin-left:2px}
+.row .tl-main{flex:1;min-width:0}
+.row .tl-t{font-size:14.5px;font-weight:500}
+.row .tl-s{font-size:12px;color:var(--ink-soft)}
+.row .tl-time{font-size:14.5px;font-weight:600;font-family:"JetBrains Mono",monospace;background:none;text-align:right}
+.row .mini{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;color:var(--ink-faint)}
+.row .mini svg{width:16px;height:16px;stroke:currentColor}
+.row .mini:active{background:var(--line-soft)}
+.bal{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-top:1px solid var(--line-soft)}
+.bal .k{font-size:13px;color:var(--ink-soft);font-weight:500}
+.bal .v{font-size:15px;font-weight:700;font-family:"JetBrains Mono",monospace}
+.pos{color:var(--go)}.neg{color:var(--over)}
+
+/* ── catch-up ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:2px 16px 4px}
+.chip{padding:9px 14px;border-radius:11px;border:1.5px solid var(--line);background:var(--surface);
+  font-size:14px;font-weight:600;color:var(--ink);transition:transform .08s ease}
+.chip:active{transform:scale(.96)}
+.chip.on{border-color:var(--go);background:rgba(24,164,126,.1);color:var(--go)}
+.chip.all{border-style:dashed}
+.catch-status{padding:12px 16px 15px;font-size:13px;color:var(--ink-soft);line-height:1.5}
+.catch-status b{color:var(--ink)}
+.cbar{height:7px;border-radius:99px;background:var(--line-soft);margin-top:8px;overflow:hidden}
+.cbar>i{display:block;height:100%;background:var(--go);border-radius:99px;transition:width .5s ease}
+
+/* ── tomorrow ── */
+.tmw{padding:4px 16px 18px}
+.tmw .big{font-family:"Space Grotesk",sans-serif;font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.tmw .why{font-size:13px;color:var(--ink-soft);line-height:1.5;margin-top:4px}
+.tmw .alt{margin-top:12px;padding:11px 13px;background:var(--bg);border:1px solid var(--line);
+  border-radius:12px;font-size:13px;color:var(--ink-soft);line-height:1.5}
+.tmw .alt b{color:var(--ink)}
+
+/* ── notif status banner ── */
+.notif-banner{margin-top:14px;padding:13px 14px;border-radius:14px;
+  border:1px solid var(--line);background:var(--surface);display:flex;align-items:flex-start;gap:12px}
+.notif-banner .ic{font-size:20px;flex:none;margin-top:1px}
+.notif-banner .tx .a{font-size:14px;font-weight:600}
+.notif-banner .tx .b{font-size:12.5px;color:var(--ink-soft);margin-top:2px;line-height:1.4}
+.notif-banner .tx .act{margin-top:8px}
+.notif-banner .tx .act button{font-size:13px;font-weight:600;color:var(--go);
+  padding:7px 12px;border-radius:9px;background:rgba(24,164,126,.1)}
+
+/* ── calendar view ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav h2{font-size:17px;font-weight:600}
+.cal-nav button{width:36px;height:36px;border-radius:10px;background:var(--surface);
+  border:1px solid var(--line);display:grid;place-items:center;box-shadow:var(--shadow)}
+.cal-nav button svg{width:18px;height:18px;stroke:var(--ink-soft)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.cal-day-hdr{text-align:center;font-size:11px;font-weight:600;color:var(--ink-faint);
+  padding:6px 0;text-transform:uppercase;letter-spacing:.04em}
+.cal-cell{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;cursor:pointer;
+  border:1.5px solid transparent;transition:background .1s,border-color .1s;position:relative}
+.cal-cell:active{transform:scale(.93)}
+.cal-cell .cn{font-size:14px;font-weight:500;line-height:1}
+.cal-cell .cb{width:5px;height:5px;border-radius:50%}
+.cal-cell.today{background:var(--dial);color:#fff}
+.cal-cell.today .cn{font-weight:700}
+.cal-cell.has-data .cb{background:var(--go)}
+.cal-cell.today.has-data .cb{background:rgba(255,255,255,.5)}
+.cal-cell.selected{border-color:var(--go)}
+.cal-cell.other-month .cn{color:var(--ink-faint)}
+.cal-cell.future .cn{color:var(--ink-faint)}
+.cal-legend{display:flex;gap:14px;justify-content:flex-end;font-size:11.5px;color:var(--ink-soft);margin-bottom:10px}
+.cal-legend span{display:flex;align-items:center;gap:5px}
+.cal-legend i{width:8px;height:8px;border-radius:50%;flex:none}
+
+/* day detail panel */
+.day-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);margin-top:4px;overflow:hidden}
+.day-panel .dp-hdr{padding:14px 16px 10px;border-bottom:1px solid var(--line-soft);
+  display:flex;align-items:center;justify-content:space-between}
+.dp-hdr .dp-title{font-size:15px;font-weight:600}
+.dp-hdr .dp-bal{font-size:13px;font-weight:700;font-family:"JetBrains Mono",monospace}
+.dp-body{padding:6px 16px 14px}
+.dp-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line-soft)}
+.dp-row:first-child{border-top:none}
+.dp-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dp-lbl{flex:1;font-size:14px}
+.dp-time{font-size:14px;font-weight:600;font-family:"JetBrains Mono",monospace}
+.dp-edit{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--ink-faint)}
+.dp-edit svg{width:15px;height:15px;stroke:currentColor}
+.dp-edit:active{background:var(--line-soft)}
+.dp-empty{font-size:13.5px;color:var(--ink-faint);padding:8px 0 6px}
+.dp-add{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line-soft)}
+.dp-add button{flex:1;padding:10px;border-radius:11px;font-size:13.5px;font-weight:600;
+  background:rgba(24,164,126,.09);color:var(--go)}
+.dp-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;
+  background:var(--line-soft);border-top:1px solid var(--line-soft)}
+.dp-stat{padding:11px 10px;background:var(--surface)}
+.dp-stat .k{font-size:10.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em}
+.dp-stat .v{font-size:15px;font-weight:600;margin-top:2px;font-family:"JetBrains Mono",monospace}
+
+/* ── sheet (bottom drawer) ── */
+.scrim{position:fixed;inset:0;background:rgba(15,19,28,.5);backdrop-filter:blur(3px);
+  display:grid;place-items:end center;z-index:50;padding:0}
+.sheet{background:var(--surface);width:100%;max-width:520px;border-radius:22px 22px 0 0;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto;
+  animation:up .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet h3{font-size:18px;font-weight:600;margin-bottom:4px}
+.sheet .desc{font-size:13px;color:var(--ink-soft);margin-bottom:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px}
+.field input,.field select{width:100%;padding:13px 14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--bg);color:var(--ink)}
+.field input:focus,.field select:focus{outline:2px solid var(--go);outline-offset:-1px;border-color:transparent}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;border-top:1px solid var(--line-soft)}
+.toggle-row .t{font-size:14px;font-weight:500}
+.toggle-row .d{font-size:12px;color:var(--ink-soft)}
+.sw{width:46px;height:28px;border-radius:999px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;
+  border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.sw.on{background:var(--go)}.sw.on::after{transform:translateX(18px)}
+.sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.note{font-size:12.5px;color:var(--ink-soft);background:var(--bg);border:1px solid var(--line);
+  border-radius:12px;padding:12px;line-height:1.5;margin-top:12px}
+
+/* ── toast ── */
+.toast-wrap{position:fixed;left:0;right:0;top:calc(10px + env(safe-area-inset-top));
+  display:flex;justify-content:center;z-index:80;pointer-events:none}
+.toast{background:var(--dial);color:#fff;padding:13px 16px;border-radius:14px;
+  max-width:460px;width:calc(100% - 28px);box-shadow:0 12px 30px -8px rgba(10,14,24,.6);
+  display:flex;align-items:center;gap:11px;
+  transform:translateY(-140%);transition:transform .35s cubic-bezier(.2,.8,.2,1);pointer-events:auto}
+.toast.show{transform:translateY(0)}
+.toast .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;font-size:16px}
+.toast .tt{flex:1}.toast .tt .a{font-size:14.5px;font-weight:600}.toast .tt .b{font-size:12.5px;color:var(--dial-soft)}
+
+.footnote{text-align:center;font-size:11.5px;color:var(--ink-faint);margin-top:22px;line-height:1.5}
+.banner{background:#FEF6E7;border:1px solid #F6E2B8;color:#8A6410;font-size:12.5px;
+  padding:10px 12px;border-radius:12px;margin-bottom:12px;line-height:1.5}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="ephemeralBanner" class="banner hidden">
+  Preview mode — data won't persist. <b>Download and open on your phone</b> for full functionality.
+</div>
+
+<!-- ── TOP BAR ── -->
+<div class="top">
+  <div class="brand">
+    <div class="mark"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="none" stroke="#17A47E" stroke-width="8"/><path d="M50 32 V50 L63 58" fill="none" stroke="#F2F4F8" stroke-width="8" stroke-linecap="round"/></svg></div>
+    <div><h1>Hours</h1><div class="date" id="topDate">—</div></div>
+  </div>
+  <div class="nav-right">
+    <button class="icon-btn" id="btnToday" title="Today">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/></svg>
+    </button>
+    <button class="icon-btn" id="btnCal" title="Calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></svg>
+    </button>
+    <button class="icon-btn" id="openSettings" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="notif-dot" id="notifDot"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════ TODAY VIEW ════════════════ -->
+<div id="viewToday" class="view active">
+
+<div class="dial">
+  <div class="state-chip"><span class="dot" id="stateDot"></span><span id="stateText">Not clocked in</span></div>
+  <div class="leave-wrap">
+    <div style="min-width:0">
+      <div class="leave-label">You can leave at</div>
+      <div class="leave-time" id="leaveTime">—</div>
+      <div class="leave-note" id="leaveNote">Clock in to start your day.</div>
+    </div>
+    <div class="gauge">
+      <svg width="104" height="104" viewBox="0 0 104 104">
+        <circle class="track" cx="52" cy="52" r="45" fill="none" stroke-width="9"/>
+        <circle class="fill" id="gaugeFill" cx="52" cy="52" r="45" fill="none" stroke="#18A47E" stroke-width="9" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="282.7"/>
+      </svg>
+      <div class="center"><div class="big" id="gaugeVal">0m</div><div class="lbl">break today</div></div>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">Worked</div><div class="v" id="statWork">0h 00m<small> / 8h</small></div></div>
+    <div class="stat"><div class="k">In office since</div><div class="v" id="statIn">—</div></div>
+  </div>
+</div>
+
+<!-- notification permission banner -->
+<div id="notifBanner" class="notif-banner hidden">
+  <div class="ic">🔔</div>
+  <div class="tx">
+    <div class="a">Enable notifications</div>
+    <div class="b">Get break alerts and nightly punch-in reminders even when your phone is locked — requires hosting over https.</div>
+    <div class="act"><button id="notifEnableBtn">Enable notifications</button></div>
+  </div>
+</div>
+
+<div class="actions" id="actions"></div>
+
+<!-- catch-up -->
+<div class="card hidden" id="catchCard">
+  <div class="card-h">
+    <div><h2>Catch up</h2><div class="sub" id="catchSub">—</div></div>
+    <button class="add-btn hidden" id="catchClear" style="color:var(--ink-soft);background:var(--line-soft)">Clear</button>
+  </div>
+  <div class="chips" id="catchChips"></div>
+  <div id="catchStatus" class="catch-status hidden"></div>
+</div>
+
+<!-- meetings -->
+<div class="card">
+  <div class="card-h">
+    <div><h2>After-hours calls</h2><div class="sub" id="mtgSub">Counts toward your 8h</div></div>
+    <button class="add-btn" id="addMtg">+ Add</button>
+  </div>
+  <div class="list" id="mtgList"></div>
+  <div class="empty" id="mtgEmpty">No evening calls. Add one and your leave time shifts earlier.</div>
+</div>
+
+<!-- today punches -->
+<div class="card">
+  <div class="card-h">
+    <div><h2>Today's punches</h2><div class="sub">Tap time to edit · trash to delete</div></div>
+    <button class="add-btn" id="addPunch">+ Manual</button>
+  </div>
+  <div class="list" id="timeline"></div>
+  <div class="empty" id="tlEmpty">Nothing logged yet today.</div>
+</div>
+
+<!-- balance -->
+<div class="card">
+  <div class="card-h"><div><h2>Balance</h2><div class="sub">Over / under across all days</div></div></div>
+  <div id="histList"></div>
+  <div class="bal"><span class="k">Running total</span><span class="v" id="balTotal">+0m</span></div>
+</div>
+
+<!-- tomorrow -->
+<div class="card" id="tmwCard">
+  <div class="card-h"><div><h2>Tomorrow</h2><div class="sub">Suggested punch-in</div></div></div>
+  <div class="tmw" id="tmwBody"></div>
+</div>
+
+<div class="footnote">All data lives on this device only.<br>Add to Home Screen for the full experience.</div>
+</div><!-- /viewToday -->
+
+<!-- ════════════════ CALENDAR VIEW ════════════════ -->
+<div id="viewCal" class="view">
+  <div class="cal-nav">
+    <button id="calPrev"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <h2 id="calTitle">—</h2>
+    <button id="calNext"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+  <div class="cal-legend">
+    <span><i style="background:var(--go)"></i>Has data</span>
+    <span><i style="background:var(--dial);border-radius:2px;width:10px;height:10px"></i>Today</span>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div id="dayPanel"></div>
+</div><!-- /viewCal -->
+
+<div class="toast-wrap"><div class="toast" id="toast">
+  <div class="ic" id="toastIc">⏱</div>
+  <div class="tt"><div class="a" id="toastA"></div><div class="b" id="toastB"></div></div>
+</div></div>
+
+<script>
+"use strict";
+
+/* ════════ STORAGE ════════ */
+const Store=(()=>{const K="hours.v1";
+  try{localStorage.setItem("__t","1");localStorage.removeItem("__t");
+    return{ephemeral:false,get:()=>localStorage.getItem(K),set:v=>localStorage.setItem(K,v)};}
+  catch(e){let m=null;return{ephemeral:true,get:()=>m,set:v=>{m=v;}};}
+})();
+const DEFAULTS={settings:{workMin:480,breakMin:60,notify:true,calId:"",addToCal:false,openingMin:0},days:{}};
+let S=load();
+function load(){try{const r=Store.get();if(!r)return structuredClone(DEFAULTS);
+  const p=JSON.parse(r);p.settings=Object.assign({},DEFAULTS.settings,p.settings||{});
+  p.days=p.days||{};return p;}catch(e){return structuredClone(DEFAULTS);}}
+function save(){try{Store.set(JSON.stringify(S));}catch(e){}}
+
+/* ════════ DATE / FORMAT HELPERS ════════ */
+const pad=n=>String(n).padStart(2,"0");
+function keyOf(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function todayKey(){return keyOf(new Date());}
+function day(k){if(!S.days[k])S.days[k]={events:[],meetings:[],notified:{},catchup:0};return S.days[k];}
+function clock(ts){const d=new Date(ts);let h=d.getHours();const m=d.getMinutes(),ap=h<12?"AM":"PM";h=h%12||12;return h+":"+pad(m)+" "+ap;}
+function clockHM(ts){const d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes());}
+function clockBig(ts){const[t,ap]=clock(ts).split(" ");return t+' <span class="sm">'+ap+'</span>';}
+function fmtDur(m){m=Math.max(0,Math.round(m));return Math.floor(m/60)+"h "+pad(m%60)+"m";}
+function fmtShort(m){m=Math.round(m);const neg=m<0,a=Math.abs(m),h=Math.floor(a/60),mm=a%60;
+  return(neg?"-":"")+(h?(mm?h+"h "+mm+"m":h+"h"):(mm+"m"));}
+function todayDateLabel(){return new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"});}
+function hmToMin(hm){const[a,b]=hm.split(":").map(Number);return a*60+b;}
+function minToHm(m){m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+":"+pad(m%60);}
+function min12(m){m=((m%1440)+1440)%1440;let h=Math.floor(m/60);const mm=m%60,ap=h<12?"AM":"PM";
+  h=h%12||12;return h+":"+pad(mm)+" "+ap;}
+
+/* ════════ CORE COMPUTATION ════════ */
+function compute(k,now){
+  const ev=[...day(k).events].sort((a,b)=>a.t-b.t);
+  let state="out",last=null,present=0,brk=0,firstIn=null,lastOut=null,lastBreakStart=null;
+  for(const e of ev){
+    if(last!=null)add(e.t);
+    if(e.type==="in"){state="work";if(!firstIn)firstIn=e.t;}
+    else if(e.type==="break_start"){state="break";lastBreakStart=e.t;}
+    else if(e.type==="break_end"){state="work";}
+    else if(e.type==="out"){state="out";lastOut=e.t;}
+    last=e.t;
+  }
+  if(last!=null)add(now);
+  function add(t){const dt=Math.max(0,t-last);
+    if(state==="work")present+=dt;else if(state==="break"){present+=dt;brk+=dt;}}
+  const workMs=present-brk;
+  return{state,workMin:workMs/60000,breakMin:brk/60000,firstIn,lastOut,lastBreakStart};
+}
+function meetingMin(k){return day(k).meetings.reduce((s,m)=>s+Math.max(0,m.end-m.start),0);}
+function hasData(k){return !!(S.days[k]&&(S.days[k].events.length||S.days[k].meetings.length));}
+function dayWorkMin(k){const c=compute(k,Date.now());return c.workMin+meetingMin(k);}
+function deltaOf(k){return dayWorkMin(k)-S.settings.workMin;}
+function beforeTodayBalance(){let s=S.settings.openingMin||0;const t=todayKey();
+  Object.keys(S.days).forEach(k=>{if(k<t&&hasData(k))s+=deltaOf(k);});return s;}
+function owedBeforeToday(){return Math.max(0,-Math.round(beforeTodayBalance()));}
+function todayCatchup(){return Math.min(day(todayKey()).catchup||0,owedBeforeToday());}
+function settledBalance(){let s=S.settings.openingMin||0;const t=todayKey();
+  Object.keys(S.days).forEach(k=>{if(!hasData(k))return;
+    if(k<t||(k===t&&compute(k,Date.now()).state==="out"))s+=deltaOf(k);});return Math.round(s);}
+
+function predict(k,now){
+  const c=compute(k,now),eve=meetingMin(k);
+  const catchup=(k===todayKey())?todayCatchup():0;
+  const effTarget=S.settings.workMin+catchup;
+  const workLeft=Math.max(0,effTarget-eve-c.workMin);
+  const breakLeft=Math.max(0,S.settings.breakMin-c.breakMin);
+  const leaveTs=now+workLeft*60000;
+  const done=c.firstIn!=null&&workLeft<=0;
+  const covered=Math.min(catchup,Math.max(0,(c.workMin+eve)-S.settings.workMin));
+  return{...c,eve,catchup,covered,workLeft,breakLeft,leaveTs,done};
+}
+
+/* ════════ NOTIFICATIONS ════════ */
+let _swReg=null;
+function canNotify(){return "Notification" in window&&Notification.permission==="granted";}
+async function askNotify(){
+  if(!("Notification"in window))return false;
+  if(Notification.permission==="granted")return true;
+  if(Notification.permission!=="denied"){
+    const p=await Notification.requestPermission();return p==="granted";}
+  return false;}
+function fire(title,body,emoji){
+  if(navigator.vibrate)navigator.vibrate([120,60,120]);
+  if(S.settings.notify&&canNotify()){try{new Notification(title,{body,tag:"hours-live"});}catch(e){}}
+  toast(title,body,emoji);}
+
+function swPost(msg){
+  if(!_swReg)return;
+  const sw=_swReg.active||_swReg.installing||_swReg.waiting;
+  if(sw)sw.postMessage(msg);}
+
+/* break alerts */
+let _bTimers=[];
+function clearSchedules(){
+  _bTimers.forEach(clearTimeout);_bTimers=[];
+  swPost({type:"CANCEL_BREAK"});}
+function scheduleBreakAlerts(k){
+  clearSchedules();
+  if(!S.settings.notify)return;
+  const c=compute(k,Date.now());
+  if(c.state!=="break"||!c.lastBreakStart)return;
+  const start=c.lastBreakStart,now=Date.now();
+  const tenAtMs=start+(S.settings.breakMin-10)*60000;
+  const endAtMs=start+S.settings.breakMin*60000;
+  const n=day(k).notified;
+  // SW path — OS-level, fires even when locked
+  swPost({type:"SCHEDULE_BREAK",tenAtMs,endAtMs});
+  // JS fallback — if page is open
+  if(tenAtMs>now&&!n["10@"+start])
+    _bTimers.push(setTimeout(()=>{
+      if(compute(k,Date.now()).state==="break"&&!n["10@"+start]){
+        n["10@"+start]=1;save();fire("10 minutes of break left","Wrap up soon.","⏳");}},tenAtMs-now));
+  if(endAtMs>now&&!n["0@"+start])
+    _bTimers.push(setTimeout(()=>{
+      if(compute(k,Date.now()).state==="break"&&!n["0@"+start]){
+        n["0@"+start]=1;save();fire("Break time's up","Extra break pushes your leave time later.","🔔");}},endAtMs-now));
+}
+function checkBreakOnTick(k){
+  const c=compute(k,Date.now());
+  if(c.state!=="break")return;
+  const used=c.breakMin,start=c.lastBreakStart,n=day(k).notified;
+  if(used>=S.settings.breakMin-10&&used<S.settings.breakMin&&!n["10@"+start])
+    {n["10@"+start]=1;save();fire("10 minutes of break left","Wrap up soon.","⏳");}
+  if(used>=S.settings.breakMin&&!n["0@"+start])
+    {n["0@"+start]=1;save();fire("Break time's up","Extra break pushes your leave time later.","🔔");}}
+
+/* nightly notification */
+function recentStarts(n){const arr=[];
+  Object.keys(S.days).sort().reverse().forEach(k=>{if(arr.length>=n)return;
+    const c=compute(k,Date.now());if(c.firstIn){const d=new Date(c.firstIn);arr.push(d.getHours()*60+d.getMinutes());}});
+  return arr;}
+function median(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);
+  return s.length%2?s[m]:Math.round((s[m-1]+s[m])/2);}
+function computeTomorrowPunchMin(){
+  const bal=settledBalance(),starts=recentStarts(14);
+  let base=median(starts)??570;
+  let adj=0;
+  if(bal<0)adj=Math.min(Math.ceil(-bal/5),90);
+  else if(bal>0)adj=-Math.min(Math.floor(bal/5),30);
+  const tmwKey=keyOf(new Date(Date.now()+86400000));
+  const eve=S.days[tmwKey]?meetingMin(tmwKey):0;
+  return Math.max(420,Math.min(660,Math.round((base-adj+Math.floor(eve*.5))/5)*5));}
+function nightlyMessage(){
+  const bal=settledBalance(),pm=computeTomorrowPunchMin();
+  let reason=bal<-15?`You're ${fmtShort(-bal)} behind — a slightly earlier start helps chip away at it.`
+    :bal>15?`You're ${fmtShort(bal)} ahead — relaxed start is fine.`
+    :"You're right on track.";
+  return{title:`Tomorrow: clock in by ${min12(pm)}`,body:reason};}
+function nextWeekday1045PM(){const d=new Date();d.setHours(22,45,0,0);
+  if(d<=new Date())d.setDate(d.getDate()+1);
+  while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d.getTime();}
+async function scheduleNightlyNotification(){
+  if(!S.settings.notify)return;
+  const perm=await askNotify();if(!perm)return;
+  const reg=_swReg||(await registerSW());if(!reg)return;
+  const epochMs=nextWeekday1045PM(),{title,body}=nightlyMessage();
+  swPost({type:"SCHEDULE_NIGHTLY",epochMs,title,body});
+  const ms=epochMs-Date.now();
+  if(ms>0&&ms<86400000){
+    clearTimeout(window._nightlyTimer);
+    window._nightlyTimer=setTimeout(()=>{
+      toast(title,body,"🌙");
+      if(canNotify())new Notification(title,{body,tag:"nightly"});
+      scheduleNightlyNotification();},ms);}}
+async function cancelNightlyNotification(){
+  swPost({type:"CANCEL_NIGHTLY"});clearTimeout(window._nightlyTimer);}
+
+/* forgot-to-clock-out chain: 8PM nudge → 11:59PM auto clock-out → next-day 9AM notice */
+function isWeekday(d){const g=d.getDay();return g!==0&&g!==6;}
+function atTime(h,m,s,dayOffset){const d=new Date();d.setDate(d.getDate()+(dayOffset||0));d.setHours(h,m,s,0);return d.getTime();}
+function backfillClockOut(k){
+  const ts=new Date(k+"T23:59:59").getTime();
+  day(k).events.push({type:"out",t:ts,id:Math.random().toString(36).slice(2),auto:true});
+  day(k).autoClockedOut=true;}
+function backfillForgottenDays(){
+  const tk=todayKey();
+  const fixed=Object.keys(S.days).filter(k=>k<tk&&hasData(k)&&lastEventType(k)&&lastEventType(k)!=="out");
+  if(!fixed.length)return;
+  fixed.sort().forEach(backfillClockOut);
+  save();
+  const last=new Date(fixed.sort().pop()+"T00:00:00");
+  const label=fixed.length>1?`${fixed.length} earlier days`:last.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"});
+  fire("Forgot to clock out",`Looks like you didn't clock out on ${label} — logged it at 11:59 PM automatically.`,"⏰");}
+let _forgotTimers=[];
+function clearForgotSchedules(){
+  _forgotTimers.forEach(clearTimeout);_forgotTimers=[];
+  swPost({type:"CANCEL_8PM"});swPost({type:"CANCEL_AUTOOUT"});swPost({type:"CANCEL_FORGOT9AM"});}
+function scheduleForgotClockOutChain(k){
+  clearForgotSchedules();
+  if(!S.settings.notify||k!==todayKey())return;
+  if(!isWeekday(new Date()))return;
+  if(!day(k).events.length||lastEventType(k)==="out")return;
+  const now=Date.now();
+  const eightPM=atTime(20,0,0),elevenFiftyNine=atTime(23,59,0),nineAMtmw=atTime(9,0,0,1);
+  if(eightPM>now){
+    swPost({type:"SCHEDULE_8PM",epochMs:eightPM,
+      title:"Still clocked in?",body:"You haven't clocked out yet today."});
+    _forgotTimers.push(setTimeout(()=>{
+      if(lastEventType(k)!=="out")fire("Still clocked in?","You haven't clocked out yet today.","⏰");
+    },eightPM-now));}
+  if(elevenFiftyNine>now){
+    swPost({type:"SCHEDULE_AUTOOUT",epochMs:elevenFiftyNine,
+      title:"Clocking you out",body:"No clock-out detected — logging 11:59 PM automatically."});
+    _forgotTimers.push(setTimeout(()=>{
+      if(lastEventType(k)!=="out"){
+        backfillClockOut(k);save();render();
+        fire("Clocked you out","Didn't see a clock-out, so we logged 11:59 PM for you.","🌙");}
+    },elevenFiftyNine-now));}
+  swPost({type:"SCHEDULE_FORGOT9AM",epochMs:nineAMtmw,
+    title:"Forgot to clock out yesterday",body:"Looks like you didn't clock out yesterday — check your timeline."});}
+
+/* notification permission UI */
+function updateNotifUI(){
+  const banner=document.getElementById("notifBanner");
+  const dot=document.getElementById("notifDot");
+  const has="Notification"in window;
+  const perm=has?Notification.permission:"denied";
+  const sw="serviceWorker"in navigator;
+  const needsAction=S.settings.notify&&(perm!=="granted"||!sw);
+  banner.classList.toggle("hidden",!S.settings.notify||perm==="granted");
+  dot.classList.toggle("show",needsAction);}
+document.getElementById("notifEnableBtn").onclick=async()=>{
+  const ok=await askNotify();
+  if(ok){await registerSW();scheduleNightlyNotification();scheduleBreakAlerts(todayKey());}
+  updateNotifUI();
+  toast(ok?"Notifications enabled":"Permission denied — check browser settings",
+    ok?"Break alerts and nightly reminders are active.":"You can change this in your browser's site settings.","🔔");}
+
+/* SW registration */
+async function registerSW(){
+  if(!("serviceWorker"in navigator))return null;
+  try{_swReg=await navigator.serviceWorker.register("./sw.js",{scope:"./"});
+    await navigator.serviceWorker.ready;return _swReg;}
+  catch(e){console.warn("SW failed:",e);return null;}}
+
+/* ════════ TOAST ════════ */
+let toastTimer=null;
+function toast(a,b,emoji){const t=document.getElementById("toast");
+  document.getElementById("toastA").textContent=a;
+  document.getElementById("toastB").textContent=b||"";
+  document.getElementById("toastIc").textContent=emoji||"⏱";
+  t.classList.add("show");clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("show"),4200);
+  t.onclick=()=>t.classList.remove("show");}
+
+/* ════════ ACTIONS ════════ */
+function lastEventType(k){const e=day(k).events;
+  return e.length?[...e].sort((a,b)=>a.t-b.t).pop().type:null;}
+function addEvent(type,ts,k){
+  k=k||todayKey();
+  day(k).events.push({type,t:ts||Date.now(),id:Math.random().toString(36).slice(2)});
+  if(type==="break_start")day(k).notified={};
+  save();if(k===todayKey()){scheduleBreakAlerts(k);scheduleForgotClockOutChain(k);}render();}
+function clockIn(){addEvent("in");toast("Clocked in","Your day has started.","▶");}
+function startBreak(){addEvent("break_start");toast("Break started","I'll warn you at 10 min left.","☕");}
+function endBreak(){addEvent("break_end");toast("Back to work","","▶");clearSchedules();}
+function clockOut(){addEvent("out");toast("Clocked out","Nice work today.","✓");
+  clearSchedules();clearForgotSchedules();scheduleNightlyNotification();}
+
+function renderActions(){
+  const k=todayKey(),lt=lastEventType(k),wrap=document.getElementById("actions");wrap.innerHTML="";
+  const mk=(cls,txt,svgStr,fn)=>{const b=document.createElement("button");
+    b.className="btn "+cls;b.innerHTML=svgStr+"<span>"+txt+"</span>";b.onclick=fn;return b;};
+  const PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  const COFFEE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 9h2a2 2 0 0 1 0 5h-2"/></svg>';
+  const BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>';
+  const STOP='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  if(!lt||lt==="out"){
+    wrap.appendChild(mk("btn-go",lt==="out"?"Clock back in":"Clock in",PLAY,clockIn));
+  }else if(lt==="break_start"){
+    wrap.appendChild(mk("btn-go","End break",BACK,endBreak));
+  }else{
+    const row=document.createElement("div");row.className="row2";
+    row.appendChild(mk("btn-warn","Start break",COFFEE,startBreak));
+    row.appendChild(mk("btn-primary","Clock out",STOP,clockOut));
+    wrap.appendChild(row);}}
+
+/* ════════ TODAY RENDER ════════ */
+const CIRC=2*Math.PI*45;
+const LABEL={in:"Clocked in",break_start:"Break started",break_end:"Back from break",out:"Clocked out"};
+const COLOR={in:"var(--go)",break_start:"var(--warn)",break_end:"var(--go)",out:"var(--ink-soft)"};
+
+function renderDial(){
+  const k=todayKey(),now=Date.now(),p=predict(k,now);
+  document.getElementById("topDate").textContent=todayDateLabel();
+  const dot=document.getElementById("stateDot"),st=document.getElementById("stateText");
+  dot.classList.remove("live");
+  if(p.state==="work"){st.textContent="Working";dot.style.background="var(--go)";dot.classList.add("live");}
+  else if(p.state==="break"){st.textContent="On break";dot.style.background="var(--warn)";dot.classList.add("live");}
+  else if(p.firstIn){st.textContent="Clocked out";dot.style.background="var(--ink-soft)";}
+  else{st.textContent="Not clocked in";dot.style.background="var(--dial-soft)";}
+  const lt=document.getElementById("leaveTime"),ln=document.getElementById("leaveNote");
+  if(!p.firstIn){lt.innerHTML="—";ln.textContent="Clock in to start your day.";}
+  else if(p.state==="out"){lt.innerHTML=clockBig(p.lastOut);
+    ln.textContent="Clocked out. "+(p.workLeft<=0?"Full day done ✓":"Short by "+fmtShort(p.workLeft)+".");}
+  else if(p.done){lt.innerHTML=clockBig(now)+' <span class="sm">now</span>';
+    ln.textContent=p.catchup>0?"Target + catch-up met — free to clock out ✓":"Target met — free to clock out ✓";}
+  else{lt.innerHTML=clockBig(p.leaveTs);
+    let bits=[];
+    if(p.workLeft>0)bits.push(fmtShort(p.workLeft)+" work left");
+    if(p.eve>0)bits.push(fmtDur(p.eve)+" of calls tonight");
+    if(p.catchup>0)bits.push("covering "+fmtShort(p.catchup));
+    if(p.state==="break"&&p.breakMin>0)bits.push(fmtShort(p.breakMin)+" break so far");
+    ln.textContent=bits.join(" · ")||"On track.";}
+  // Gauge now counts UP the actual break taken today — no fixed 60-min budget.
+  // Ring fill is just a soft pace reference (fills to full at your usual break length) and
+  // keeps filling/holding past full if you go longer — it never reads "over".
+  const frac=Math.max(0,Math.min(1,p.breakMin/S.settings.breakMin));
+  const gf=document.getElementById("gaugeFill");
+  gf.style.strokeDashoffset=CIRC*(1-frac);
+  gf.style.stroke=p.breakMin>=S.settings.breakMin?"var(--warn)":"var(--go)";
+  const gv=document.getElementById("gaugeVal");
+  gv.textContent=Math.round(p.breakMin)+"m";
+  gv.style.color="var(--dial-ink)";
+  document.getElementById("statWork").innerHTML=fmtDur(p.workMin)+`<small> / ${fmtDur(S.settings.workMin)}</small>`;
+  document.getElementById("statIn").textContent=p.firstIn?clock(p.firstIn):"—";}
+
+function renderTimeline(){
+  const k=todayKey(),ev=[...day(k).events].sort((a,b)=>a.t-b.t);
+  const list=document.getElementById("timeline");list.innerHTML="";
+  document.getElementById("tlEmpty").classList.toggle("hidden",ev.length>0);
+  ev.forEach(e=>{
+    const row=document.createElement("div");row.className="row";
+    row.innerHTML=`<span class="tl-dot" style="background:${COLOR[e.type]}"></span>
+      <div class="tl-main"><div class="tl-t">${LABEL[e.type]}</div></div>
+      <button class="tl-time" data-id="${e.id}">${clock(e.t)}</button>
+      <button class="mini" data-del="${e.id}" aria-label="Delete">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>`;
+    row.querySelector("[data-id]").onclick=()=>editPunch(e.id,k);
+    row.querySelector("[data-del]").onclick=()=>{
+      day(k).events=day(k).events.filter(x=>x.id!==e.id);save();scheduleBreakAlerts(k);render();};
+    list.appendChild(row);});}
+
+function editPunch(id,k){
+  k=k||todayKey();const e=day(k).events.find(x=>x.id===id);if(!e)return;
+  openSheet(`<h3>Edit punch</h3><div class="desc">${LABEL[e.type]}</div>
+    <div class="field"><label>Time</label><input type="time" id="ptime" value="${clockHM(e.t)}"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="sc">Cancel</button>
+      <button class="btn btn-go" id="sv">Save</button></div>`);
+  document.getElementById("sc").onclick=closeSheet;
+  document.getElementById("sv").onclick=()=>{
+    const v=document.getElementById("ptime").value;if(!v)return;
+    const d=new Date(e.t);const[h,m]=v.split(":");d.setHours(+h,+m,0,0);e.t=d.getTime();
+    save();scheduleBreakAlerts(k);render();closeSheet();};}
+
+function addPunchManual(k){
+  k=k||todayKey();
+  openSheet(`<h3>Add a punch</h3><div class="desc">Forgot to log something? Add it here.</div>
+    <div class="field"><label>Type</label><select id="ptype">
+      <option value="in">Clocked in</option>
+      <option value="break_start">Break started</option>
+      <option value="break_end">Back from break</option>
+      <option value="out">Clocked out</option></select></div>
+    <div class="field"><label>Time</label><input type="time" id="ptime" value="${clockHM(Date.now())}"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="sc">Cancel</button>
+      <button class="btn btn-go" id="sv">Add</button></div>`);
+  document.getElementById("sc").onclick=closeSheet;
+  document.getElementById("sv").onclick=()=>{
+    const type=document.getElementById("ptype").value,v=document.getElementById("ptime").value;
+    if(!v)return;
+    const d=new Date();const[h,m]=v.split(":");d.setHours(+h,+m,0,0);
+    addEvent(type,d.getTime(),k);closeSheet();};}
+
+/* ════════ MEETINGS ════════ */
+function renderMeetings(){
+  const k=todayKey(),m=[...day(k).meetings].sort((a,b)=>a.start-b.start);
+  const list=document.getElementById("mtgList");list.innerHTML="";
+  document.getElementById("mtgEmpty").classList.toggle("hidden",m.length>0);
+  const tot=meetingMin(k);
+  document.getElementById("mtgSub").textContent=tot>0
+    ?`${fmtDur(tot)} tonight — office time shifts ${fmtDur(tot)} earlier`
+    :"Counts toward your 8h — leaves office earlier";
+  m.forEach(mt=>{
+    const row=document.createElement("div");row.className="row";
+    row.innerHTML=`<span class="tl-dot" style="background:#6C5CE7"></span>
+      <div class="tl-main"><div class="tl-t">${mt.title||"Call"}</div>
+      <div class="tl-s">${min12(mt.start)}–${min12(mt.end)} · ${fmtShort(mt.end-mt.start)}</div></div>
+      <button class="mini" data-del="${mt.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>`;
+    row.querySelector("[data-del]").onclick=()=>{
+      day(k).meetings=day(k).meetings.filter(x=>x.id!==mt.id);save();render();};
+    list.appendChild(row);});}
+
+function addMeeting(){
+  openSheet(`<h3>Add an evening call</h3>
+    <div class="desc">Its duration is deducted from daytime hours owed.</div>
+    <div class="field"><label>What is it?</label><input id="mt" placeholder="e.g. US client sync"></div>
+    <div class="two">
+      <div class="field"><label>Start</label><input type="time" id="ms" value="20:00"></div>
+      <div class="field"><label>End</label><input type="time" id="me" value="21:00"></div></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="sc">Cancel</button>
+      <button class="btn btn-go" id="sv">Add call</button></div>`);
+  document.getElementById("sc").onclick=closeSheet;
+  document.getElementById("sv").onclick=()=>{
+    const t=document.getElementById("mt").value.trim();
+    const s=document.getElementById("ms").value,e=document.getElementById("me").value;
+    if(!s||!e)return;
+    const start=hmToMin(s),end=hmToMin(e);
+    if(end<=start){toast("Check the times","End must be after start.","⚠");return;}
+    day(todayKey()).meetings.push({id:Math.random().toString(36).slice(2),title:t,start,end,source:"manual"});
+    save();render();closeSheet();};}
+
+/* ════════ CATCH-UP ════════ */
+function setCatchup(min){const k=todayKey();day(k).catchup=Math.max(0,Math.min(min,owedBeforeToday()));save();render();}
+function renderCatchup(p){
+  const card=document.getElementById("catchCard"),owed=owedBeforeToday();
+  if(owed<=0){card.classList.add("hidden");return;}
+  card.classList.remove("hidden");
+  document.getElementById("catchSub").textContent="You're "+fmtShort(owed)+" behind overall";
+  const cur=todayCatchup();
+  const presets=[15,30,60].filter(v=>v<owed);presets.push(owed);
+  const chips=document.getElementById("catchChips");chips.innerHTML="";
+  presets.forEach(v=>{
+    const isAll=v===owed,on=cur===v;
+    const b=document.createElement("button");
+    b.className="chip"+(on?" on":"")+(isAll?" all":"");
+    b.textContent=isAll?"All ("+fmtShort(owed)+")":"+"+fmtShort(v);
+    b.onclick=()=>setCatchup(on?0:v);chips.appendChild(b);});
+  const stat=document.getElementById("catchStatus"),clr=document.getElementById("catchClear");
+  if(cur>0){
+    clr.classList.remove("hidden");clr.onclick=()=>setCatchup(0);
+    const pct=Math.round(100*Math.min(1,p.covered/cur));
+    stat.classList.remove("hidden");
+    stat.innerHTML=(p.covered>=cur
+      ?`<b>Covered ${fmtShort(cur)} today.</b> Comes off your deficit when you clock out.`
+      :`Covering <b>${fmtShort(cur)}</b> today · <b>${fmtShort(p.covered)}</b> banked so far`)
+      +`<div class="cbar"><i style="width:${pct}%"></i></div>`;
+  }else{clr.classList.add("hidden");stat.classList.add("hidden");}}
+
+/* ════════ HISTORY ════════ */
+function renderHistory(){
+  const keys=Object.keys(S.days).filter(hasData).sort().reverse();
+  const list=document.getElementById("histList");list.innerHTML="";
+  keys.forEach(k=>{
+    const isToday=k===todayKey(),tot=dayWorkMin(k),delta=tot-S.settings.workMin;
+    const d=new Date(k+"T00:00:00");
+    const row=document.createElement("div");row.className="bal";
+    row.innerHTML=`<span class="k">${d.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"})}${isToday?" · today":""}</span>
+      <span class="v">${fmtDur(tot)} <span class="${delta>=0?"pos":"neg"}" style="font-size:12px">(${delta>=0?"+":""}${fmtShort(delta)})</span></span>`;
+    list.appendChild(row);});
+  if(S.settings.openingMin){
+    const row=document.createElement("div");row.className="bal";
+    row.innerHTML=`<span class="k">Starting balance</span>
+      <span class="v ${S.settings.openingMin>=0?"pos":"neg"}">${S.settings.openingMin>=0?"+":""}${fmtShort(S.settings.openingMin)}</span>`;
+    list.appendChild(row);}
+  const bal=settledBalance();
+  const bt=document.getElementById("balTotal");
+  bt.textContent=(bal>=0?"+":"")+fmtShort(bal);
+  bt.className="v "+(bal>=0?"pos":"neg");}
+
+/* ════════ TOMORROW ════════ */
+function renderTomorrow(){
+  const pm=computeTomorrowPunchMin(),bal=settledBalance();
+  const starts=recentStarts(14);
+  const tmwKey=keyOf(new Date(Date.now()+86400000));
+  const eve=S.days[tmwKey]?meetingMin(tmwKey):0;
+  const finish=pm+S.settings.workMin+S.settings.breakMin-eve;
+  let why=starts.length?`Based on your recent ${starts.length} day${starts.length>1?"s":""} of history.`
+    :"No history yet — 9:30 AM is the default. Sharpens as you log days.";
+  let html=`<div class="big">${min12(pm)}</div>
+    <div class="why">${why} Standard day wraps around <b>${min12(finish)}</b>${eve>0?`, with ${fmtShort(eve)} of evening calls reducing office time`:``}.</div>`;
+  const owed=Math.max(0,-bal);
+  if(owed>0){const bite=Math.min(owed,60);
+    html+=`<div class="alt">You're <b>${fmtShort(owed)}</b> behind. Clock in by <b>${min12(pm-bite)}</b> to recover <b>${fmtShort(bite)}</b> — or use the Catch up card anytime.</div>`;}
+  document.getElementById("tmwBody").innerHTML=html;}
+
+/* ════════ MASTER RENDER ════════ */
+function render(){
+  const k=todayKey(),now=Date.now(),p=predict(k,now);
+  renderDial();
+  renderActions();
+  renderCatchup(p);
+  renderMeetings();
+  renderTimeline();
+  renderHistory();
+  renderTomorrow();
+  updateNotifUI();
+  checkBreakOnTick(k);
+  save();}
+
+/* ════════ CALENDAR VIEW ════════ */
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+let selectedCalKey=null;
+
+function renderCalendar(){
+  const now=new Date(),tk=todayKey();
+  const title=new Date(calYear,calMonth,1).toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  document.getElementById("calTitle").textContent=title;
+  const grid=document.getElementById("calGrid");grid.innerHTML="";
+  ["Su","Mo","Tu","We","Th","Fr","Sa"].forEach(h=>{
+    const d=document.createElement("div");d.className="cal-day-hdr";d.textContent=h;grid.appendChild(d);});
+  const first=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const daysInPrev=new Date(calYear,calMonth,0).getDate();
+  // prev month filler
+  for(let i=first-1;i>=0;i--){
+    const cell=document.createElement("div");cell.className="cal-cell other-month";
+    const d=new Date(calYear,calMonth-1,daysInPrev-i);
+    const k=keyOf(d);
+    cell.innerHTML=`<span class="cn">${daysInPrev-i}</span><span class="cb"></span>`;
+    if(hasData(k))cell.classList.add("has-data");
+    cell.onclick=()=>selectCalDay(k);grid.appendChild(cell);}
+  // this month
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(calYear,calMonth,d),k=keyOf(date);
+    const cell=document.createElement("div");cell.className="cal-cell";
+    const isToday=k===tk,isFuture=date>now;
+    if(isToday)cell.classList.add("today");
+    if(isFuture)cell.classList.add("future");
+    if(hasData(k))cell.classList.add("has-data");
+    if(k===selectedCalKey)cell.classList.add("selected");
+    cell.innerHTML=`<span class="cn">${d}</span><span class="cb"></span>`;
+    cell.onclick=()=>selectCalDay(k);grid.appendChild(cell);}
+  // next month filler
+  const total=first+daysInMonth;const rem=(7-total%7)%7;
+  for(let d=1;d<=rem;d++){
+    const cell=document.createElement("div");cell.className="cal-cell other-month";
+    const date=new Date(calYear,calMonth+1,d),k=keyOf(date);
+    cell.innerHTML=`<span class="cn">${d}</span><span class="cb"></span>`;
+    if(hasData(k))cell.classList.add("has-data");
+    cell.onclick=()=>selectCalDay(k);grid.appendChild(cell);}
+  renderDayPanel();}
+
+function selectCalDay(k){
+  selectedCalKey=selectedCalKey===k?null:k;
+  renderCalendar();}
+
+function renderDayPanel(){
+  const panel=document.getElementById("dayPanel");
+  if(!selectedCalKey){panel.innerHTML="";return;}
+  const k=selectedCalKey;
+  const d=new Date(k+"T00:00:00");
+  const label=d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"});
+  const now=Date.now();
+  const c=compute(k,k===todayKey()?now:new Date(k+"T23:59:59").getTime());
+  const tot=c.workMin+meetingMin(k);
+  const delta=hasData(k)?tot-S.settings.workMin:null;
+  const ev=[...day(k).events].sort((a,b)=>a.t-b.t);
+  const isToday=k===todayKey();
+  const isFuture=new Date(k+"T00:00:00")>new Date();
+
+  let evHtml=ev.length?ev.map(e=>`
+    <div class="dp-row">
+      <span class="dp-dot" style="background:${COLOR[e.type]}"></span>
+      <span class="dp-lbl">${LABEL[e.type]}${e.auto?' <span style="color:var(--ink-faint);font-weight:400">(auto)</span>':""}</span>
+      <button class="dp-time" onclick="editPunch('${e.id}','${k}')">${clock(e.t)}</button>
+      <button class="dp-edit" onclick="deletePunch('${e.id}','${k}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+    </div>`).join("")
+    :`<div class="dp-empty">No punches logged${isFuture?" — day hasn't happened yet.":"."}${!isFuture&&!isToday?" Tap + Punch to add entries.":""}</div>`;
+
+  const statsHtml=hasData(k)?`<div class="dp-stats">
+    <div class="dp-stat"><div class="k">Worked</div><div class="v">${fmtDur(c.workMin)}</div></div>
+    <div class="dp-stat"><div class="k">Break</div><div class="v">${fmtDur(c.breakMin)}</div></div>
+    <div class="dp-stat"><div class="k">Total</div><div class="v ${delta!=null?(delta>=0?"pos":"neg"):""}">${delta!=null?(delta>=0?"+":"")+fmtShort(delta):"—"}</div></div>
+  </div>`:"";
+
+  panel.innerHTML=`<div class="day-panel">
+    <div class="dp-hdr">
+      <div class="dp-title">${label}</div>
+      ${delta!=null?`<div class="dp-bal ${delta>=0?"pos":"neg"}">${delta>=0?"+":""}${fmtShort(delta)}</div>`:""}
+    </div>
+    <div class="dp-body">${evHtml}</div>
+    ${statsHtml}
+    <div class="dp-add">
+      <button onclick="addPunchManual('${k}')">+ Punch</button>
+      ${!isFuture?`<button onclick="addMeetingForDay('${k}')">+ Call</button>`:""}
+    </div>
+  </div>`;}
+
+function deletePunch(id,k){
+  day(k).events=day(k).events.filter(x=>x.id!==id);
+  save();if(k===todayKey())scheduleBreakAlerts(k);render();renderCalendar();}
+
+function addMeetingForDay(k){
+  openSheet(`<h3>Add a call</h3><div class="desc">${new Date(k+"T00:00:00").toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})}</div>
+    <div class="field"><label>What is it?</label><input id="mt" placeholder="e.g. US client sync"></div>
+    <div class="two">
+      <div class="field"><label>Start</label><input type="time" id="ms" value="20:00"></div>
+      <div class="field"><label>End</label><input type="time" id="me" value="21:00"></div></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="sc">Cancel</button>
+      <button class="btn btn-go" id="sv">Add</button></div>`);
+  document.getElementById("sc").onclick=closeSheet;
+  document.getElementById("sv").onclick=()=>{
+    const t=document.getElementById("mt").value.trim();
+    const s=document.getElementById("ms").value,e=document.getElementById("me").value;
+    if(!s||!e)return;const start=hmToMin(s),end=hmToMin(e);
+    if(end<=start){toast("Check the times","End must be after start.","⚠");return;}
+    day(k).meetings.push({id:Math.random().toString(36).slice(2),title:t,start,end,source:"manual"});
+    save();render();renderCalendar();closeSheet();};}
+
+/* ════════ SETTINGS ════════ */
+function openSettings(){
+  const g=S.settings;
+  openSheet(`<h3>Settings</h3>
+    <div class="two">
+      <div class="field"><label>Work per day (hours)</label>
+        <input type="number" id="sw" min="1" max="16" step="0.5" value="${g.workMin/60}"></div>
+      <div class="field"><label>Break per day (min)</label>
+        <input type="number" id="sb" min="0" max="180" step="5" value="${g.breakMin}"></div></div>
+    <div class="field"><label>Hours already owed <span style="font-weight:400;color:var(--ink-faint)">(negative = behind)</span></label>
+      <input type="number" id="sob" step="0.25" placeholder="e.g. -3.5" value="${g.openingMin?g.openingMin/60:""}"></div>
+    <div class="toggle-row">
+      <div><div class="t">Break &amp; nightly reminders</div>
+        <div class="d">Requires https hosting + notification permission</div></div>
+      <div class="sw ${g.notify?"on":""}" id="tn"></div></div>
+    <div class="field" style="margin-top:14px">
+      <label>Google Calendar client ID <span style="font-weight:400;color:var(--ink-faint)">(optional)</span></label>
+      <input id="scid" placeholder="xxxx.apps.googleusercontent.com" value="${g.calId||""}"></div>
+    <div class="note"><b>Calendar setup:</b> host over https, enable Calendar API in Google Cloud, create an OAuth client ID and paste it above.</div>
+    <div class="sheet-actions" style="margin-top:14px">
+      <button class="btn btn-ghost" id="exp">Export CSV</button>
+      <button class="btn btn-danger" id="rst">Reset today</button></div>
+    <div class="sheet-actions" style="margin-top:10px">
+      <button class="btn btn-go" id="done" style="grid-column:1/3">Done</button></div>`);
+  let notify=g.notify;const tn=document.getElementById("tn");
+  tn.onclick=async()=>{notify=!notify;
+    if(notify){const ok=await askNotify();if(!ok){notify=false;toast("Permission needed","Allow in browser settings.","🔔");}}
+    tn.classList.toggle("on",notify);};
+  document.getElementById("exp").onclick=exportData;
+  document.getElementById("rst").onclick=()=>{
+    if(confirm("Clear today's punches and calls?")){
+      S.days[todayKey()]={events:[],meetings:[],notified:{},catchup:0};save();render();closeSheet();}};
+  document.getElementById("done").onclick=()=>{
+    const w=parseFloat(document.getElementById("sw").value)||8;
+    const b=parseInt(document.getElementById("sb").value)||0;
+    const ob=parseFloat(document.getElementById("sob").value);
+    g.workMin=Math.round(w*60);g.breakMin=b;g.notify=notify;
+    g.openingMin=isNaN(ob)?0:Math.round(ob*60);
+    g.calId=document.getElementById("scid").value.trim();
+    save();render();closeSheet();
+    if(notify){scheduleNightlyNotification();scheduleForgotClockOutChain(todayKey());}
+    else{cancelNightlyNotification();clearForgotSchedules();}};}
+
+function exportData(){
+  const rows=[["date","clock_in","clock_out","worked_min","break_min","calls_min","total_min","target_min","delta_min"]];
+  Object.keys(S.days).sort().forEach(k=>{
+    const c=compute(k,new Date(k+"T23:59:59").getTime());
+    const cm=meetingMin(k),tot=c.workMin+cm;
+    rows.push([k,c.firstIn?clockHM(c.firstIn):"",c.lastOut?clockHM(c.lastOut):"",
+      Math.round(c.workMin),Math.round(c.breakMin),cm,Math.round(tot),
+      S.settings.workMin,Math.round(tot-S.settings.workMin)]);});
+  const csv=rows.map(r=>r.join(",")).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download="hours-export.csv";a.click();toast("Exported","Saved hours-export.csv","⬇");}
+
+/* ════════ SHEET / MODAL ════════ */
+function openSheet(html){closeSheet();
+  const s=document.createElement("div");s.className="scrim";s.id="scrim";
+  s.innerHTML='<div class="sheet">'+html+'</div>';document.body.appendChild(s);
+  s.onclick=e=>{if(e.target===s)closeSheet();};}
+function closeSheet(){const s=document.getElementById("scrim");if(s)s.remove();}
+
+/* ════════ VIEW SWITCHER ════════ */
+let currentView="today";
+function showView(v){
+  currentView=v;
+  document.getElementById("viewToday").classList.toggle("active",v==="today");
+  document.getElementById("viewCal").classList.toggle("active",v==="cal");
+  document.getElementById("btnToday").classList.toggle("active",v==="today");
+  document.getElementById("btnCal").classList.toggle("active",v==="cal");
+  if(v==="cal"){selectedCalKey=todayKey();renderCalendar();}
+  if(v==="today")render();}
+
+document.getElementById("btnToday").onclick=()=>showView("today");
+document.getElementById("btnCal").onclick=()=>showView("cal");
+document.getElementById("calPrev").onclick=()=>{calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();};
+document.getElementById("calNext").onclick=()=>{calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();};
+document.getElementById("openSettings").onclick=openSettings;
+document.getElementById("addMtg").onclick=addMeeting;
+document.getElementById("addPunch").onclick=()=>addPunchManual();
+document.getElementById("ephemeralBanner").classList.toggle("hidden",!Store.ephemeral);
+
+/* ════════ BOOT ════════ */
+backfillForgottenDays();
+scheduleBreakAlerts(todayKey());
+scheduleForgotClockOutChain(todayKey());
+render();
+setInterval(()=>{if(currentView==="today")render();},1000);
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden){
+    backfillForgottenDays();
+    scheduleBreakAlerts(todayKey());
+    scheduleForgotClockOutChain(todayKey());
+    render();}});
+(async()=>{
+  await registerSW();
+  if(S.settings.notify&&"Notification"in window&&Notification.permission==="granted"){
+    scheduleNightlyNotification();scheduleBreakAlerts(todayKey());scheduleForgotClockOutChain(todayKey());}
+  if("serviceWorker"in navigator)
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(S.settings.notify)scheduleNightlyNotification();});
+})();
+</script>
+</body>
+</html>
